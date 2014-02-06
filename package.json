@@ -9,6 +9,7 @@
   "keywords": [
   ],
   "dependencies": {
+    "through2": "latest",
     "gulp-util": "~2.2.5",
     "requirejs": "2.1.8",
     "event-stream": "~3.0.20"

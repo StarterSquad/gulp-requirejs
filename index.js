@@ -1,33 +1,37 @@
-var gutil     = require('gulp-util'),
-  requirejs   = require('requirejs'),
-  PluginError = gutil.PluginError,
-  es          = require('event-stream');
+var through = require('through2');
+var requirejs = require('requirejs');
+var gutil = require('gulp-util');
+var PluginError = gutil.PluginError;
 
 // Consts
 const PLUGIN_NAME = 'gulp-requirejs';
 
-module.exports = function(opts) {
+module.exports = function (opts) {
+
   if (!opts) {
     throw new PluginError(PLUGIN_NAME, 'Missing options array!');
-  }
-
-  if (!opts.out && typeof opts.out !== 'string') {
-    throw new PluginError(PLUGIN_NAME, 'Only single file outputs are supported right now, please pass a valid output file name!');
   }
 
   if (!opts.baseUrl) {
     throw new PluginError(PLUGIN_NAME, 'Pipeing dirs/files is not supported right now, please specify the base path for your script.');
   }
 
-  return es.map(function (file, callback) {
-    var ps = es.pause();
+  var stream = through.obj(function (file, enc, callback) {
 
-    opts.out = function(text) {
-      file.contents = new Buffer(text);
-      ps.resume();
-      callback(null, file);
+    var optimize = function (illBeBack) {
+
+      opts.out = function (text) {
+        illBeBack(text);
+        stream.push(file);
+        return callback();
+      };
+      requirejs.optimize(opts);
     };
-    opts.optimize = 'none';
-    requirejs.optimize(opts);
+
+    return optimize(function (text) {
+      file.contents = Buffer(text);
+    });
   });
+
+  return stream;
 };
